@@ -33,6 +33,12 @@
  - [Hot Reloading](#hot-reloading)
  - [Babel configuration](#babel-configuration)
  - [Package Json file](#package-json-file)
+ ## Introduction to Redux
+ - [Introduction to Redux](#introduction-to-redux)
+ - [Detailed Redux](#detailed-redux)
+ - [Ecmascript 6 Object Assign](#ecmascript-6-object-assign)
+ - [Handling Immutability in different versions of Javascript](#handling-immutability-in-different-versions-of-javascript)
+ - [Reducer Detailed](#reducer-detailed)
 
 
 
@@ -1224,4 +1230,120 @@ You can use the `npm-run-all` command to run parallel scripts
     "test:watch": "npm run test -- --watch"
   },
 ```
+
+# Introduction to Redux
+[top](#)
+
+## Why do I need Redux ?
+The following features is where Redux really shines:
+
+### Non Hierarchical Data
+If I have two React Components which need to share data- Redux provides an elegant solution.
+- Feature of Redux for communicating data between two disjoint Components is called - `STORE`
+- Single Immutable Store (in other words, kindof Singleton / State cant be changed)
+- The only way to trigger a state change in Redux, is by an Action
+- State is changed by pure function - a.k.a Reducers 
+    - Reducers are pure function, which accept an action, update the state.
+
+### Complex data flows
+If Borth React Components are manipulating the same data - Redux comes to great use.
+
+### Many actions
+Same data used in Multiple places.
+
+
+|Flux|Redux|
+|:--|--:|
+|Data flows Down, Actions flows Up | Data flows Down, Actions flows Up |
+|Unidirectional Flow|Unidirectional Flow |
+|Support Actions | Support Actions |
+|Multiple Stores | Single Store |
+|Stores contain state and change logic | Store and change logic are separate |
+|Flat and disconnected stores | Single stores with hierarchical reducers |
+|Singleton dispatcher | No dispatcher |
+|React components subscribe to stores | Container components utilize connect |
+|State is mutable | State is immutable |
+
+# Detailed Redux
+
+## What are ACTIONS ?
+
+Just like in flux, the events happening in an application are called - `ACTIONS` 
+
+`ACTIONS` are just plain objects, containing the description of an event
+
+```js
+rateCourse(rating){
+    return{type:RATE_COURSE, rating:inputValue}
+}//end:rateCourse
+```
+
+>NOTE: The only things that you shouldn't try passing to an `action` are things that wont serialize, like - functions, promises
+
+
+## What are STORES ?
+
+In Redux, you create a store, by calling the `let store=createStore(reducer);` in your application's entry point.
+- You pass the createStore function to a `reducer function`
+- Reducer handle the state changes
+- CreateStores only stores data
+
+### Why Stores are immutable?
+
+Having a single source of truth makes the application easier to manage and understand.
+
+- store.dispatch(action)
+- store.subscribe(listener)
+- store.getState()
+- replaceReducer(nextReducer) //This is for Hot replacing.
+
+>NOTE: There is no API for changing data directly in a store.
+>NOTE: The only way you can ever change a state, is by dispatching an `ACTION`
+
+## What is immutability ?
+
+`immutability` - TO CHANGE A STATE, RETURN A `NEW OBJECT`
+
+>DID YOU KNOW ? the following datatypes in Javascript are already immutable
+- String
+- Number
+- Boolean
+- Undefined
+- null
+
+> The following are mutable in Javacript
+- Array
+- Objects
+- Functions
+
+# Ecmascript 6 Object Assign
+
+```js
+Object.assign({}, state, {role:admin}); //Create a copy to new object, source is an object called state, and only change one ppty-role
+```
+
+> NOTE: Object.assign() is a feature of Ecmascript 6, which Babel can't transpile. So we need to use `babel-polyfills`
+
+# Handling Immutability in different versions of Javascript
+
+|EcmaScript 6 | EcmaScript 5 | Third party Libraries |
+|:------------|:------------:|----------------------:|
+| Object.assign | Lodash merge | react-addons-update |
+| Spread operator | Lodash extend | Immutable.js |
+|                 | Object-assign |             |
+
+
+> NOTE: To enforce immutability - We can use the following react library - `redux-immutable-state-invariant`
+> NOTE: To enforce immutability - We can use the library - `Immutable.js`
+
+# Reducer Detailed
+
+
+
+
+
+
+
+
+
 
