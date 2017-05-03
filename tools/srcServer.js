@@ -1,17 +1,17 @@
 import express from 'express';
 import webpack from 'webpack';
-import path from 'path';
+import path from 'path'; //part of npm
 import config from '../webpack.config.dev';
-import open from 'open';
+import open from 'open'; //part of npm
 
 /* eslint-disable no-console */
 
 const port = 3000;
-const app = express();
+const app = express(); //instance of Express JS server side
 const compiler = webpack(config);
 
 app.use(require('webpack-dev-middleware')(compiler, {
-  noInfo: true,
+  noInfo: true, //no info on the command line
   publicPath: config.output.publicPath
 }));
 

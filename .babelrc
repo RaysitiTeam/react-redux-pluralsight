@@ -2,7 +2,7 @@
   "presets": ["react", "es2015"],
   "env": {
     "development": {
-      "presets": ["react-hmre"]
+      "presets": ["react-hmre"] //This preset bundles up many of hot reloading, this is experimental plugin
     }
   }
 }
