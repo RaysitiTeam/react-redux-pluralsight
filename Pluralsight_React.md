@@ -38,7 +38,8 @@
  - [Detailed Redux](#detailed-redux)
  - [Ecmascript 6 Object Assign](#ecmascript-6-object-assign)
  - [Handling Immutability in different versions of Javascript](#handling-immutability-in-different-versions-of-javascript)
- - [Reducer Detailed](#reducer-detailed)
+ - [React Redux Detailed](#react-redux-detailed)
+ - [Redux Unidirectional Flow](#redux-unidirectional-flow)
 
 
 
@@ -240,6 +241,8 @@ export const PrimitiveComponent = React.createClass({
     }//end:render
 });//end:createClass
 ```
+
+>NOTE: When using `React.createClass()` function, the function is auto-bound to us. Else if we are using ES6 class component, we need to do the binding manually.
 
 ## 2. Function Component (for stateless Components)...
 
@@ -1263,6 +1266,8 @@ Same data used in Multiple places.
 |Singleton dispatcher | No dispatcher |
 |React components subscribe to stores | Container components utilize connect |
 |State is mutable | State is immutable |
+|Need to use Component Lifecycle methods|No need to use an component lifecycle methods|
+|Will not work with Stateless Components|Will also work just fine with stateless components|
 
 # Detailed Redux
 
@@ -1316,6 +1321,9 @@ Having a single source of truth makes the application easier to manage and under
 - Objects
 - Functions
 
+## What is Memoizing 
+Memoizing (`Reselect Library`) is about keeping track of the results of each function call so that the function doesn't have to run again if it's already been run with a same set of parameters.
+
 # Ecmascript 6 Object Assign
 
 ```js
@@ -1336,14 +1344,219 @@ Object.assign({}, state, {role:admin}); //Create a copy to new object, source is
 > NOTE: To enforce immutability - We can use the following react library - `redux-immutable-state-invariant`
 > NOTE: To enforce immutability - We can use the library - `Immutable.js`
 
-# Reducer Detailed
+# React Redux Detailed
+
+Redux was originally created as an alternative to Flux. The `react-redux` library connects your `Store` with your `React` Component.
+
+> Redux isn't merely for React Libraries. There's
+
+- Redux with React `react-redux`
+- Redux with Angular `ng-Redux`
+- Redux with Ember `Redux for Ember`
+- Redux with jQuery `Redux for jQuery`
+
+React Redux connects your React Components with your store, it has 2 core components:
+
+- Provider Component : It wraps your entire application. It removes the hazzle of attaching your `store` as props to all of your components
+```js
+<Provider store={this.props.store}>
+    <YourApp/>
+</Provider>
+```
+- Connect function: Generates the container components for you.
+```js
+connect(mapStateToProps,mapDispatchToProps)
+```
+
+# Redux Unidirectional Flow
+
+To setup a Redux We need to go step by step as follows: 
+1. Create an Action `courseActions.js` - This will just emit an Action with `type` ppty and other ppty. [Step1](#step1)
+1. Create a Reducer function `courseReducer.js` - This function will handle the action and update the state (copy of the state). [Step2](#step2)
+1. Register the Reducer function in the `combineReducers` library of `redux` - `reducers/index.js` [Step3](#step3)
+1. Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux - `configureStore.js`. [Step4](#step4)
+1. Wrap the configure store as store object and assign it to the `Provider` component from `react-redux`. [Step5](#step5)
+1. Implement `mapStateToProps` and map the store object with a new Prop object in your custom component. [Step6](#step6)
+1. Implement `mapDispatchToProps` (Optional) - else use the `props.dispatch` to trigger the action. [Step7](#step7)
+
+---
+
+# Step1 
+## Create an Action `courseActions.js` - This will just emit an Action with `type` ppty and other ppty.
+```js
+//actions/courseActions.js
+//#1: First script to run
+export default function createCourse(course){
+    debugger;
+    return{
+        type:'CREATE_COURSE', //This is the default mandatory property of any action object in Redux
+        course:course // The rest of the object can be styled in any manner. In ES6 we can omit RHS if LHS name equals RHS
+    }
+}//end:createCourse
+```
+
+---
+
+# Step2 
+## Create a Reducer function `courseReducer.js` - This function will handle the action and update the state (copy of the state)
+```js
+//reducers/courseReducer.js
+//#2: Second script to run
+export default function courseReducer(state=[],action){
+    switch(action.type){
+        case 'CREATE_COURSE':
+            // state.push(action.course); //State is immutable, I shouldn't be mutating the state.
+            return [...state,Object.assign({},action.course)]; // This way we are passing a copy of state, not the mutated state.
+            break;
+        default: 
+            return state; //Any other action, we can just return the current state.
+    }//end:switch
+}
+```
+
+---
+
+# Step3 
+## Register the Reducer function in the `combineReducers` library of `redux` - `reducers/index.js`
+```js
+//reducers/index.js
+//#3: Register the courseReducer in a redux rootReducer package
+import {combineReducers} from 'redux'; //will combine multiple reducers inside one root reducer package.
+import courses from './courseReducer';
+
+//We are using a - SHORT HAND PROPERTY NAME
+const rootReducer = combineReducers({
+    courses:courses
+});
+
+export default rootReducer;
+```
+
+---
+
+# Step4 
+##Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux - `configureStore.js`
+```js
+//store/configureStore.js
+//#4: Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux
+import {createStore, applyMiddleware} from 'redux';
+import rootReducer from '../reducers'; // This will look for reducers/index.js
+//OPTIONAL - Need to add a validation check to see if the state is mutating or not.
+import reduxImmutableStateInvariant from 'redux-immutable-state-invariant';
 
 
+//Sort of IIFE - This function will run as default when this script is called - export default function
+export default function configureStore(initialState){
+    return createStore(rootReducer,initialState, applyMiddleware(reduxImmutableStateInvariant()));
+}//end:configureStore
+```
+
+---
+
+# Step5 
+## Wrap the configure store as store object and assign it to the `Provider` component from `react-redux`
+
+```js
+//#5: Wrap the configure store as store object and assign it to the Provider component from react-redux
+import 'babel-polyfill'; //There are few ES6 which babel cannot transpile, so there's babel polyfill
+import React from 'react';
+import {render} from 'react-dom';
+import {Router, browserHistory} from 'react-router';
+import routes from './routes';
+//Redux Provider component
+import configureStore from './store/configureStore';
+import {Provider} from 'react-redux';
+//Styles
+import './styles/styles.css';
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+
+const store = configureStore(); //We can pass initial state here too or in courseReducer function.
+render(
+    <Provider store={store}>
+    <Router history={browserHistory} routes={routes}/>
+    </Provider>, document.getElementById('app')    
+);
+```
+
+---
+
+# Step6. 
+## Implement `mapStateToProps` and map the store object with a new Prop object in your custom component
+# Step7. 
+## Implement `mapDispatchToProps` (Optional) - else use the `props.dispatch` to trigger the action
+
+```js
+import React,{Component} from 'react';
+import {connect} from 'react-redux';
+import PropTypes from 'prop-types';
+//If you add - export default in courseActions.js, then you will not be able to use the alias - courseActions
+import courseActions from '../../actions/courseActions'; //Import all exported functions
+
+class CoursePage extends Component{    
+
+    constructor(props,context){
+        super(props,context);
+        this.state = {course:{title:""}};
+
+        this.onTitleChange = this.onTitleChange.bind(this);
+        this.onClickSave = this.onClickSave.bind(this);
+        
+    }//end:constructor
+
+    onTitleChange(event){
+        const course = this.state.course;
+        course.title = event.target.value;
+        this.setState({course:course});        
+    }//end:onTitleChange
+
+    onClickSave(){
+        // alert(`Saving: ${this.state.course.title}`);
+        this.props.dispatch(courseActions(this.state.course)); //This is because we havent invoked - mapDispatchToProps
+        const course = {title:""};
+        this.setState({course:course}); //Clear the input field
+    }//end:onClickSave
+
+    courseRow(course,index){
+        return <div key={index}>{course.title}</div>;
+    }//end:courseRow
 
 
+    render(){
+        return(
+            <div>
+                <h1>Courses</h1>
+                {this.props.courses.map(this.courseRow)}
+                <h2>Add a Course</h2>
+                <input
+                    type="text"
+                    onChange={this.onTitleChange}
+                    value = {this.state.course.title}/>
+                    &nbsp;
+                <input
+                    type="submit"
+                    value="Save"
+                    className="btn btn-success btn-sm"
+                    onClick={this.onClickSave}/>
+            </div>
+        );
+    }//end:render
+}//end:class-CoursePage
+
+CoursePage.propTypes = {
+    dispatch:PropTypes.func.isRequired,
+    courses:PropTypes.array.isRequired
+};
+
+function mapStateToProps(state, ownProps){
+    return{
+        courses:state.courses //Now our component CoursePage has a new props - courses
+    };
+}//end:mapStateToProps
 
 
+export default connect(mapStateToProps)(CoursePage);
+// const connectedStateAndProps = connect(mapStateToProps, mapDispatchToProps);
+// export default connectedStateAndProps(CoursePage);
 
-
-
-
+// export default connect(mapStateToProps, mapDispatchToProps)(CoursePage);
+```

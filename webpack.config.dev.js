@@ -4,7 +4,7 @@ import path from 'path'; //from npm
 //We will create an object literal
 export default { 
   debug: true, // enables displaying of errors
-  devtool: 'cheap-module-eval-source-map', //cheap-module-eval-source-map / inline-source-map - one of many option for devtool
+  devtool: 'source-map', //cheap-module-eval-source-map / inline-source-map - one of many option for devtool
   noInfo: false, //webpack will display a list of all the files that it is bundling,
   entry: [
     'eventsource-polyfill', // necessary for hot reloading with IE
