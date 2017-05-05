@@ -1,5 +1,6 @@
 import React,{Component} from 'react';
 import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
 import PropTypes from 'prop-types';
 //If you add - export default in courseActions.js, then you will not be able to use the alias - courseActions
 import * as courseActions from '../../actions/courseActions'; //Import all exported functions
@@ -23,7 +24,7 @@ class CoursePage extends Component{
 
     onClickSave(){
         // alert(`Saving: ${this.state.course.title}`);
-        this.props.dispatch(courseActions.createCourse(this.state.course)); //This is because we havent invoked - mapDispatchToProps
+        this.props.actions.createCourse(this.state.course); //This is because we havent invoked - mapDispatchToProps
         const course = {title:""};
         this.setState({course:course}); //Clear the input field
     }//end:onClickSave
@@ -54,9 +55,9 @@ class CoursePage extends Component{
     }//end:render
 }//end:class-CoursePage
 
-CoursePage.propTypes = {
-    dispatch:PropTypes.func.isRequired,
-    courses:PropTypes.array.isRequired
+CoursePage.propTypes = {    
+    courses:PropTypes.array.isRequired,
+    actions:PropTypes.object.isRequired
 };
 
 function mapStateToProps(state, ownProps){
@@ -65,8 +66,14 @@ function mapStateToProps(state, ownProps){
     };
 }//end:mapStateToProps
 
+//without the dispatch, the function will just return the object
+function mapDispatchToProps(dispatch){
+    return{
+        actions:bindActionCreators(courseActions,dispatch) // Now we have a common action object for all the actions - AWESOME
+    };
+}//end:mapDispatchToProps
 
-export default connect(mapStateToProps)(CoursePage);
+export default connect(mapStateToProps,mapDispatchToProps)(CoursePage);
 // const connectedStateAndProps = connect(mapStateToProps, mapDispatchToProps);
 // export default connectedStateAndProps(CoursePage);
 

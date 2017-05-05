@@ -1,5 +1,9 @@
 # Lynda React
 
+## Project Idea
+Create an Online / App. for Markdown Reader + Reveal JS from Github.
+
+
  ## Useful Links
 - [Schema Store for Web Development](http://schemastore.org/json/)
 - [React Icons Website](https://gorangajic.github.io/react-icons/fa.html)
@@ -40,6 +44,8 @@
  - [Handling Immutability in different versions of Javascript](#handling-immutability-in-different-versions-of-javascript)
  - [React Redux Detailed](#react-redux-detailed)
  - [Redux Unidirectional Flow](#redux-unidirectional-flow)
+ - [Notes about Redux and EcmaScript](#notes-about-redux-and-ecmascript)
+ - [3 ways of dispatching actions](#3-ways-of-dispatching-actions)
 
 
 
@@ -1560,3 +1566,90 @@ export default connect(mapStateToProps)(CoursePage);
 
 // export default connect(mapStateToProps, mapDispatchToProps)(CoursePage);
 ```
+
+---
+
+# Notes about Redux and EcmaScript
+
+> - NOTE: Once the `mapDispatchToProps` function has been defined.. Redux will no longer append the dispatch methods to any of the props by default
+> - NOTE: You cannot use your imports as object alias, if you are using the `export default` keyword in your scripts.
+
+# 3 ways of dispatching actions
+
+The following are the three ways in which we can wire up our dispatch actions to props:
+
+1. Without defining the `mapDispatchToProps` function
+
+If we dont declare this function and pass only one parameter to our `connect()` function, then we can make use of the 
+`this.props.dispatch(courseActions.createCourse(this.state.course))`
+
+2. Using the `mapDispatchTopProps` function
+
+If we declare the function and also pass it to the `connect()` function, then we can make use of the following
+
+```js
+....
+...
+this.props.createCourse(this.state.course);
+...
+...
+...
+function mapDispatchToProps(dispatch){
+    return{
+        createCourse:course=>dipatch(courseActions.createCourse(course));
+    };//this will go as props.
+}//end:mapDispatchToProps
+```
+
+3. Using the `bindActionCreators` function
+
+With this library we can, combine multiple actions into one props object. `props.actions`
+
+```js
+import {bindActionCreators} from 'redux';
+...
+...
+...
+onClickSave(){
+        // alert(`Saving: ${this.state.course.title}`);
+        this.props.actions.createCourse(this.state.course); //This is because we havent invoked - mapDispatchToProps
+        const course = {title:""};
+        this.setState({course:course}); //Clear the input field
+    }//end:onClickSave
+....
+....
+....
+....
+//without the dispatch, the function will just return the object
+function mapDispatchToProps(dispatch){
+    return{
+        actions:bindActionCreators(courseActions,dispatch) // Now we have a common action object for all the actions - AWESOME
+    };
+}//end:mapDispatchToProps
+
+```
+
+---
+
+# 3 Redux Async Libraries
+
+- `redux-thunk:` Dan Abermov (creator of Redux)
+- `redux-promise:` Flux std actions to async calls. (Least popular)
+- `redux-saga:` ES6 generators and rich-domain specific language
+
+|Redux Thunks| Redux Saga|
+|:-----------|----------:|
+|Async are handled by Functions|Async are handled by Generators|
+|Clunky to test|Easy to test|
+|Have to mock data|Dont have to mock data|
+|Easy to learn|Hard to learn|
+
+
+# Redux Thunk
+
+`Thunk` is actually a Computer Science term, it's a function which wraps an expression in order to delay it's evaluation.
+
+## Mock API
+
+
+
