@@ -46,6 +46,8 @@ Create an Online / App. for Markdown Reader + Reveal JS from Github.
  - [Redux Unidirectional Flow](#redux-unidirectional-flow)
  - [Notes about Redux and EcmaScript](#notes-about-redux-and-ecmascript)
  - [3 ways of dispatching actions](#3-ways-of-dispatching-actions)
+ - [3 Redux Async Libraries](#3-redux-async-libraries)
+ - [Class Component Template using Redux](#class-component-template-using-redux)
 
 
 
@@ -1649,7 +1651,47 @@ function mapDispatchToProps(dispatch){
 
 `Thunk` is actually a Computer Science term, it's a function which wraps an expression in order to delay it's evaluation.
 
-## Mock API
 
+# Class Component Template using Redux
 
+```js
+import React,{Component} from 'react';
+import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
+import PropTypes from 'prop-types';
+import * as courseActions from '../../actions/courseActions';
 
+class ManageCoursePage extends Component{
+    constructor(props,context){
+        super(props,context);
+
+    }//end:constructor
+
+    render(){
+        return(
+            <div>
+
+            </div>
+        );
+    }//end:render
+}//end:class-ManageCoursePage
+
+ManageCoursePage.propTypes = {
+    courses:PropTypes.array.isRequired,
+    actions:PropTypes.object.isRequired
+};
+
+function mapStateToProps(state,ownProps){
+    return{
+        courses:state.courses
+    };
+}//end:mapStateToProps
+
+function mapDispatchToProps(dispatch){
+    return{
+        courseAction:bindActionCreators(courseActions,dispatch)
+    };
+}//end:mapDispatchToProps   
+
+export default connect(mapStateToProps,mapDispatchToProps)(ManageCoursePage);
+```
