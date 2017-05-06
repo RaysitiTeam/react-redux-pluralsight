@@ -1,5 +1,9 @@
 # Lynda React
 
+## Project Idea
+Create an Online / App. for Markdown Reader + Reveal JS from Github.
+
+
  ## Useful Links
 - [Schema Store for Web Development](http://schemastore.org/json/)
 - [React Icons Website](https://gorangajic.github.io/react-icons/fa.html)
@@ -33,7 +37,19 @@
  - [Hot Reloading](#hot-reloading)
  - [Babel configuration](#babel-configuration)
  - [Package Json file](#package-json-file)
-
+ ## Introduction to Redux
+ - [Introduction to Redux](#introduction-to-redux)
+ - [Detailed Redux](#detailed-redux)
+ - [Ecmascript 6 Object Assign](#ecmascript-6-object-assign)
+ - [Handling Immutability in different versions of Javascript](#handling-immutability-in-different-versions-of-javascript)
+ - [React Redux Detailed](#react-redux-detailed)
+ - [Redux Unidirectional Flow](#redux-unidirectional-flow)
+ - [Notes about Redux and EcmaScript](#notes-about-redux-and-ecmascript)
+ - [3 ways of dispatching actions](#3-ways-of-dispatching-actions)
+ - [3 Redux Async Libraries](#3-redux-async-libraries)
+ - [Class Component Template using Redux](#class-component-template-using-redux)
+## Production Ready Webpack
+ - [Setting up a Production Ready Build](#setting-up-a-production-ready-build)
 
 
  # Installing Web Pack
@@ -234,6 +250,8 @@ export const PrimitiveComponent = React.createClass({
     }//end:render
 });//end:createClass
 ```
+
+>NOTE: When using `React.createClass()` function, the function is auto-bound to us. Else if we are using ES6 class component, we need to do the binding manually.
 
 ## 2. Function Component (for stateless Components)...
 
@@ -1224,4 +1242,763 @@ You can use the `npm-run-all` command to run parallel scripts
     "test:watch": "npm run test -- --watch"
   },
 ```
+
+# Introduction to Redux
+[top](#)
+
+## Why do I need Redux ?
+The following features is where Redux really shines:
+
+### Non Hierarchical Data
+If I have two React Components which need to share data- Redux provides an elegant solution.
+- Feature of Redux for communicating data between two disjoint Components is called - `STORE`
+- Single Immutable Store (in other words, kindof Singleton / State cant be changed)
+- The only way to trigger a state change in Redux, is by an Action
+- State is changed by pure function - a.k.a Reducers 
+    - Reducers are pure function, which accept an action, update the state.
+
+### Complex data flows
+If Borth React Components are manipulating the same data - Redux comes to great use.
+
+### Many actions
+Same data used in Multiple places.
+
+
+|Flux|Redux|
+|:--|--:|
+|Data flows Down, Actions flows Up | Data flows Down, Actions flows Up |
+|Unidirectional Flow|Unidirectional Flow |
+|Support Actions | Support Actions |
+|Multiple Stores | Single Store |
+|Stores contain state and change logic | Store and change logic are separate |
+|Flat and disconnected stores | Single stores with hierarchical reducers |
+|Singleton dispatcher | No dispatcher |
+|React components subscribe to stores | Container components utilize connect |
+|State is mutable | State is immutable |
+|Need to use Component Lifecycle methods|No need to use an component lifecycle methods|
+|Will not work with Stateless Components|Will also work just fine with stateless components|
+
+# Detailed Redux
+
+## What are ACTIONS ?
+
+Just like in flux, the events happening in an application are called - `ACTIONS` 
+
+`ACTIONS` are just plain objects, containing the description of an event
+
+```js
+rateCourse(rating){
+    return{type:RATE_COURSE, rating:inputValue}
+}//end:rateCourse
+```
+
+>NOTE: The only things that you shouldn't try passing to an `action` are things that wont serialize, like - functions, promises
+
+
+## What are STORES ?
+
+In Redux, you create a store, by calling the `let store=createStore(reducer);` in your application's entry point.
+- You pass the createStore function to a `reducer function`
+- Reducer handle the state changes
+- CreateStores only stores data
+
+### Why Stores are immutable?
+
+Having a single source of truth makes the application easier to manage and understand.
+
+- store.dispatch(action)
+- store.subscribe(listener)
+- store.getState()
+- replaceReducer(nextReducer) //This is for Hot replacing.
+
+>NOTE: There is no API for changing data directly in a store.
+>NOTE: The only way you can ever change a state, is by dispatching an `ACTION`
+
+## What is immutability ?
+
+`immutability` - TO CHANGE A STATE, RETURN A `NEW OBJECT`
+
+>DID YOU KNOW ? the following datatypes in Javascript are already immutable
+- String
+- Number
+- Boolean
+- Undefined
+- null
+
+> The following are mutable in Javacript
+- Array
+- Objects
+- Functions
+
+## What is Memoizing 
+Memoizing (`Reselect Library`) is about keeping track of the results of each function call so that the function doesn't have to run again if it's already been run with a same set of parameters.
+
+# Ecmascript 6 Object Assign
+
+```js
+Object.assign({}, state, {role:admin}); //Create a copy to new object, source is an object called state, and only change one ppty-role
+```
+
+> NOTE: Object.assign() is a feature of Ecmascript 6, which Babel can't transpile. So we need to use `babel-polyfills`
+
+# Handling Immutability in different versions of Javascript
+
+|EcmaScript 6 | EcmaScript 5 | Third party Libraries |
+|:------------|:------------:|----------------------:|
+| Object.assign | Lodash merge | react-addons-update |
+| Spread operator | Lodash extend | Immutable.js |
+|                 | Object-assign |             |
+
+
+> NOTE: To enforce immutability - We can use the following react library - `redux-immutable-state-invariant`
+> NOTE: To enforce immutability - We can use the library - `Immutable.js`
+
+# React Redux Detailed
+
+Redux was originally created as an alternative to Flux. The `react-redux` library connects your `Store` with your `React` Component.
+
+> Redux isn't merely for React Libraries. There's
+
+- Redux with React `react-redux`
+- Redux with Angular `ng-Redux`
+- Redux with Ember `Redux for Ember`
+- Redux with jQuery `Redux for jQuery`
+
+React Redux connects your React Components with your store, it has 2 core components:
+
+- Provider Component : It wraps your entire application. It removes the hazzle of attaching your `store` as props to all of your components
+```js
+<Provider store={this.props.store}>
+    <YourApp/>
+</Provider>
+```
+- Connect function: Generates the container components for you.
+```js
+connect(mapStateToProps,mapDispatchToProps)
+```
+
+# Redux Unidirectional Flow
+
+To setup a Redux We need to go step by step as follows: 
+1. Create an Action `courseActions.js` - This will just emit an Action with `type` ppty and other ppty. [Step1](#step1)
+1. Create a Reducer function `courseReducer.js` - This function will handle the action and update the state (copy of the state). [Step2](#step2)
+1. Register the Reducer function in the `combineReducers` library of `redux` - `reducers/index.js` [Step3](#step3)
+1. Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux - `configureStore.js`. [Step4](#step4)
+1. Wrap the configure store as store object and assign it to the `Provider` component from `react-redux`. [Step5](#step5)
+1. Implement `mapStateToProps` and map the store object with a new Prop object in your custom component. [Step6](#step6)
+1. Implement `mapDispatchToProps` (Optional) - else use the `props.dispatch` to trigger the action. [Step7](#step7)
+
+---
+
+# Step1 
+## Create an Action `courseActions.js` - This will just emit an Action with `type` ppty and other ppty.
+```js
+//actions/courseActions.js
+//#1: First script to run
+export default function createCourse(course){
+    debugger;
+    return{
+        type:'CREATE_COURSE', //This is the default mandatory property of any action object in Redux
+        course:course // The rest of the object can be styled in any manner. In ES6 we can omit RHS if LHS name equals RHS
+    }
+}//end:createCourse
+```
+
+---
+
+# Step2 
+## Create a Reducer function `courseReducer.js` - This function will handle the action and update the state (copy of the state)
+```js
+//reducers/courseReducer.js
+//#2: Second script to run
+export default function courseReducer(state=[],action){
+    switch(action.type){
+        case 'CREATE_COURSE':
+            // state.push(action.course); //State is immutable, I shouldn't be mutating the state.
+            return [...state,Object.assign({},action.course)]; // This way we are passing a copy of state, not the mutated state.
+            break;
+        default: 
+            return state; //Any other action, we can just return the current state.
+    }//end:switch
+}
+```
+
+---
+
+# Step3 
+## Register the Reducer function in the `combineReducers` library of `redux` - `reducers/index.js`
+```js
+//reducers/index.js
+//#3: Register the courseReducer in a redux rootReducer package
+import {combineReducers} from 'redux'; //will combine multiple reducers inside one root reducer package.
+import courses from './courseReducer';
+
+//We are using a - SHORT HAND PROPERTY NAME
+const rootReducer = combineReducers({
+    courses:courses
+});
+
+export default rootReducer;
+```
+
+---
+
+# Step4 
+##Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux - `configureStore.js`
+```js
+//store/configureStore.js
+//#4: Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux
+import {createStore, applyMiddleware} from 'redux';
+import rootReducer from '../reducers'; // This will look for reducers/index.js
+//OPTIONAL - Need to add a validation check to see if the state is mutating or not.
+import reduxImmutableStateInvariant from 'redux-immutable-state-invariant';
+
+
+//Sort of IIFE - This function will run as default when this script is called - export default function
+export default function configureStore(initialState){
+    return createStore(rootReducer,initialState, applyMiddleware(reduxImmutableStateInvariant()));
+}//end:configureStore
+```
+
+---
+
+# Step5 
+## Wrap the configure store as store object and assign it to the `Provider` component from `react-redux`
+
+```js
+//#5: Wrap the configure store as store object and assign it to the Provider component from react-redux
+import 'babel-polyfill'; //There are few ES6 which babel cannot transpile, so there's babel polyfill
+import React from 'react';
+import {render} from 'react-dom';
+import {Router, browserHistory} from 'react-router';
+import routes from './routes';
+//Redux Provider component
+import configureStore from './store/configureStore';
+import {Provider} from 'react-redux';
+//Styles
+import './styles/styles.css';
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+
+const store = configureStore(); //We can pass initial state here too or in courseReducer function.
+render(
+    <Provider store={store}>
+    <Router history={browserHistory} routes={routes}/>
+    </Provider>, document.getElementById('app')    
+);
+```
+
+---
+
+# Step6. 
+## Implement `mapStateToProps` and map the store object with a new Prop object in your custom component
+# Step7. 
+## Implement `mapDispatchToProps` (Optional) - else use the `props.dispatch` to trigger the action
+
+```js
+import React,{Component} from 'react';
+import {connect} from 'react-redux';
+import PropTypes from 'prop-types';
+//If you add - export default in courseActions.js, then you will not be able to use the alias - courseActions
+import courseActions from '../../actions/courseActions'; //Import all exported functions
+
+class CoursePage extends Component{    
+
+    constructor(props,context){
+        super(props,context);
+        this.state = {course:{title:""}};
+
+        this.onTitleChange = this.onTitleChange.bind(this);
+        this.onClickSave = this.onClickSave.bind(this);
+        
+    }//end:constructor
+
+    onTitleChange(event){
+        const course = this.state.course;
+        course.title = event.target.value;
+        this.setState({course:course});        
+    }//end:onTitleChange
+
+    onClickSave(){
+        // alert(`Saving: ${this.state.course.title}`);
+        this.props.dispatch(courseActions(this.state.course)); //This is because we havent invoked - mapDispatchToProps
+        const course = {title:""};
+        this.setState({course:course}); //Clear the input field
+    }//end:onClickSave
+
+    courseRow(course,index){
+        return <div key={index}>{course.title}</div>;
+    }//end:courseRow
+
+
+    render(){
+        return(
+            <div>
+                <h1>Courses</h1>
+                {this.props.courses.map(this.courseRow)}
+                <h2>Add a Course</h2>
+                <input
+                    type="text"
+                    onChange={this.onTitleChange}
+                    value = {this.state.course.title}/>
+                    &nbsp;
+                <input
+                    type="submit"
+                    value="Save"
+                    className="btn btn-success btn-sm"
+                    onClick={this.onClickSave}/>
+            </div>
+        );
+    }//end:render
+}//end:class-CoursePage
+
+CoursePage.propTypes = {
+    dispatch:PropTypes.func.isRequired,
+    courses:PropTypes.array.isRequired
+};
+
+function mapStateToProps(state, ownProps){
+    return{
+        courses:state.courses //Now our component CoursePage has a new props - courses
+    };
+}//end:mapStateToProps
+
+
+export default connect(mapStateToProps)(CoursePage);
+// const connectedStateAndProps = connect(mapStateToProps, mapDispatchToProps);
+// export default connectedStateAndProps(CoursePage);
+
+// export default connect(mapStateToProps, mapDispatchToProps)(CoursePage);
+```
+
+---
+
+# Notes about Redux and EcmaScript
+
+> - NOTE: Once the `mapDispatchToProps` function has been defined.. Redux will no longer append the dispatch methods to any of the props by default
+> - NOTE: You cannot use your imports as object alias, if you are using the `export default` keyword in your scripts.
+
+# 3 ways of dispatching actions
+
+The following are the three ways in which we can wire up our dispatch actions to props:
+
+1. Without defining the `mapDispatchToProps` function
+
+If we dont declare this function and pass only one parameter to our `connect()` function, then we can make use of the 
+`this.props.dispatch(courseActions.createCourse(this.state.course))`
+
+2. Using the `mapDispatchTopProps` function
+
+If we declare the function and also pass it to the `connect()` function, then we can make use of the following
+
+```js
+....
+...
+this.props.createCourse(this.state.course);
+...
+...
+...
+function mapDispatchToProps(dispatch){
+    return{
+        createCourse:course=>dipatch(courseActions.createCourse(course));
+    };//this will go as props.
+}//end:mapDispatchToProps
+```
+
+3. Using the `bindActionCreators` function
+
+With this library we can, combine multiple actions into one props object. `props.actions`
+
+```js
+import {bindActionCreators} from 'redux';
+...
+...
+...
+onClickSave(){
+        // alert(`Saving: ${this.state.course.title}`);
+        this.props.actions.createCourse(this.state.course); //This is because we havent invoked - mapDispatchToProps
+        const course = {title:""};
+        this.setState({course:course}); //Clear the input field
+    }//end:onClickSave
+....
+....
+....
+....
+//without the dispatch, the function will just return the object
+function mapDispatchToProps(dispatch){
+    return{
+        actions:bindActionCreators(courseActions,dispatch) // Now we have a common action object for all the actions - AWESOME
+    };
+}//end:mapDispatchToProps
+
+```
+
+---
+
+# 3 Redux Async Libraries
+
+- `redux-thunk:` Dan Abermov (creator of Redux)
+- `redux-promise:` Flux std actions to async calls. (Least popular)
+- `redux-saga:` ES6 generators and rich-domain specific language
+
+|Redux Thunks| Redux Saga|
+|:-----------|----------:|
+|Async are handled by Functions|Async are handled by Generators|
+|Clunky to test|Easy to test|
+|Have to mock data|Dont have to mock data|
+|Easy to learn|Hard to learn|
+
+
+# Redux Thunk
+
+`Thunk` is actually a Computer Science term, it's a function which wraps an expression in order to delay it's evaluation.
+
+
+# Class Component Template using Redux
+
+```js
+import React,{Component} from 'react';
+import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
+import PropTypes from 'prop-types';
+import * as courseActions from '../../actions/courseActions';
+
+class ManageCoursePage extends Component{
+    constructor(props,context){
+        super(props,context);
+
+    }//end:constructor
+
+    render(){
+        return(
+            <div>
+
+            </div>
+        );
+    }//end:render
+}//end:class-ManageCoursePage
+
+ManageCoursePage.propTypes = {
+    courses:PropTypes.array.isRequired,
+    actions:PropTypes.object.isRequired
+};
+
+function mapStateToProps(state,ownProps){
+    return{
+        courses:state.courses
+    };
+}//end:mapStateToProps
+
+function mapDispatchToProps(dispatch){
+    return{
+        courseAction:bindActionCreators(courseActions,dispatch)
+    };
+}//end:mapDispatchToProps   
+
+export default connect(mapStateToProps,mapDispatchToProps)(ManageCoursePage);
+```
+
+# Setting up a Production Ready Build
+
+In this setup, we will tackle the following challenges in creating a Production build
+-   Lints and Runs our tests
+-   Bundle & Minify JS & CSS
+-   Generate JS and CSS sourcemaps
+-   Exclude dev-specific concerns
+-   Build React in Production Mode (Switch of propType validation and many other warnings)
+
+
+## Making Changes to the configStore file
+
+Our Redux Store, currently contains `reduxImmutableStateInvariant` code not required for production. So we are removing the third argument `reduxImmutableStateInvariant` from the createStore function:
+
+```js
+//#4: Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux
+import {createStore, applyMiddleware} from 'redux';
+import rootReducer from '../reducers'; // This will look for reducers/index.js
+//OPTIONAL - Need to add a validation check to see if the state is mutating or not.
+//import reduxImmutableStateInvariant from 'redux-immutable-state-invariant';
+
+
+//Sort of IIFE - This function will run as default when this script is called - export default function
+export default function configureStore(initialState){
+    return createStore(rootReducer,initialState); //reduxImmutableStateInvariant is not required for production, only required for development,
+}//end:configureStore
+
+```
+
+Will name this file as `configStore.prod.js` and save it in the same folder - `store/configStore.prod.js`
+
+The root JS file will have the following:
+
+```js
+if(process.env.NODE_ENV === 'production'){
+    module.exports = require('./configureStore.prod');
+}else{
+    module.exports = require('./configureStore.dev');
+}
+```
+
+---
+
+## Creating a Webpack Production Config file
+
+The Webpack production configuration file will have the following:
+
+```js
+//Configuring Webpack for Production Environment
+//NOTE: We will be calling it from our build.js
+import webpack from 'webpack';
+import path from 'path'; //from npm
+import ExtractTextPlugin from 'extract-text-webpack-plugin'; //Extract CSS from our JS
+
+//Constant for production build - GLOBALS
+const GLOBALS = {
+  'process.env.NODE_ENV':JSON.stringify('production') // Defining a Node env variable, sets React for Production
+}
+
+//We will create an object literal
+export default { 
+  debug: true, // enables displaying of errors
+  devtool: 'source-map', //cheap-module-eval-source-map / inline-source-map - one of many option for devtool
+  noInfo: false, //webpack will display a list of all the files that it is bundling,
+  entry: './src/index', //You dont need Hot-reloading, just point to the index.js
+  target: 'web', //This is a webpack for web application
+  output: {
+    path: __dirname + '/dist', // Note: Physical files are only output by the production build task `npm run build`.
+    publicPath: '/',
+    filename: 'bundle.js' //This is strange, webpack will not generate physical files, but create bundles in memory
+  },
+  devServer: {
+    contentBase: './dist' // For production, we will load from the dist folder
+  },
+  plugins: [
+    //Setting a set of Optimizers for production zip
+    new webpack.optimize.OccurrenceOrderPlugin(), //optimizes the order our plugins are bundled in
+    new webpack.DefinePlugin(GLOBALS), //Omits development features
+    new ExtractTextPlugin('styles.css'), //Lets us extract CSS into a separate file
+    new webpack.optimize.DedupePlugin(), //Dedupe plugin eliminates duplicate library references
+    new webpack.optimize.UglifyJsPlugin() //Minifies JS
+  ],
+  module: {
+    loaders: [
+      {test: /\.js$/, include: path.join(__dirname, 'src'), loaders: ['babel']},
+      {test: /(\.css)$/, loader: ExtractTextPlugin.extract('css?sourceMap')}, //tells it to generte source-maps
+      //Jargon for bootstrap to handle fonts 
+      {test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'},
+      {test: /\.(woff|woff2)$/, loader: 'url?prefix=font/&limit=5000'},
+      {test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/octet-stream'},
+      {test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml'}
+    ]
+  }
+};
+
+```
+
+---
+
+We will also be creating three different files:
+- `build.js` - This script is used to target the `webpack.config.prod.js` insted of the `webpack.config.dev.js` which is default configured in `package.json`
+- `buildHtml.js` - This script is used to inject CSS scripts and bundle.js JS files into html
+- `distServer.js` - This is the Production server triggered from `package.json` file
+
+> tools\build.js
+
+```js
+// More info on Webpack's Node API here: https://webpack.github.io/docs/node.js-api.html
+// Allowing console calls below since this is a build file.
+/*eslint-disable no-console */
+import webpack from 'webpack';
+import webpackConfig from '../webpack.config.prod';
+import colors from 'colors';
+
+process.env.NODE_ENV = 'production'; // this assures the Babel dev config (for hot reloading) doesn't apply.
+
+console.log('Generating minified bundle for production via Webpack. This will take a moment...'.blue);
+
+webpack(webpackConfig).run((err, stats) => {
+  if (err) { // so a fatal error occurred. Stop here.
+    console.log(err.bold.red);
+    return 1;
+  }
+
+  const jsonStats = stats.toJson();
+
+  if (jsonStats.hasErrors) {
+    return jsonStats.errors.map(error => console.log(error.red));
+  }
+
+  if (jsonStats.hasWarnings) {
+    console.log('Webpack generated the following warnings: '.bold.yellow);
+    jsonStats.warnings.map(warning => console.log(warning.yellow));
+  }
+
+  console.log(`Webpack stats: ${stats}`);
+
+  // if we got this far, the build succeeded.
+  console.log('Your app has been compiled in production mode and written to /dist. It\'s ready to roll!'.green);
+
+  return 0;
+});
+
+```
+
+---
+
+> tools\buildHtml.js
+
+```js
+// This script copies src/index.html into /dist/index.html
+// This is a good example of using Node and cheerio to do a simple file transformation.
+// In this case, the transformation is useful since we only use a separate css file in prod.
+import fs from 'fs';
+import cheerio from 'cheerio';
+import colors from 'colors';
+
+/*eslint-disable no-console */
+
+fs.readFile('src/index.html', 'utf8', (err, markup) => {
+  if (err) {
+    return console.log(err);
+  }
+
+  const $ = cheerio.load(markup);
+
+  // since a separate spreadsheet is only utilized for the production build, need to dynamically add this here.
+  $('head').prepend('<link rel="stylesheet" href="styles.css">');
+
+  fs.writeFile('dist/index.html', $.html(), 'utf8', function (err) {
+    if (err) {
+      return console.log(err);
+    }
+    console.log('index.html written to /dist'.green);
+  });
+});
+
+```
+
+---
+
+> tools\distServer.js
+
+```js
+import express from 'express';
+import path from 'path';
+import open from 'open';
+import compression from 'compression';
+
+/*eslint-disable no-console */
+
+const port = 3000;
+const app = express();
+
+app.use(compression());
+app.use(express.static('dist'));
+
+app.get('*', function(req, res) {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+app.listen(port, function(err) {
+  if (err) {
+    console.log(err);
+  } else {
+    open(`http://localhost:${port}`);
+  }
+});
+
+```
+---
+
+## Package.json
+
+Finally, adding the build scripts to the npm `scripts` section  to `package.json`
+
+```js
+{
+  "name": "pluralsight-redux-starter",
+  "version": "1.0.0",
+  "description": "Starter kit for React and Redux Pluralsight course by Cory House",
+  "scripts": {
+    "prestart": "babel-node tools/startMessage.js",
+    "start": "npm-run-all --parallel open:src lint:watch",
+    "open:src": "babel-node tools/srcServer.js",
+    "lint": "node_modules/.bin/esw webpack.config.* src tools",
+    "lint:watch": "npm run lint -- --watch",
+    "test": "mocha --reporter progress tools/testSetup.js \"src/**/*.test.js\"",
+    "test:watch": "npm run test -- --watch",
+    
+    "clean-dist": "npm run remove-dist && mkdir dist",
+    "remove-dist": "node_modules/.bin/rimraf ./dist",
+    "build:html": "babel-node tools/buildHtml.js",
+    "prebuild": "npm-run-all clean-dist test lint build:html",
+    "build": "babel-node tools/build.js",
+    "postbuild": "babel-node tools/distServer.js"
+  },
+  "author": "Cory House",
+  "license": "MIT",
+  "dependencies": {
+    "babel-polyfill": "6.8.0",
+    "axios": "^0.16.1",
+    "classnames": "^2.2.5",
+    "radium": "^0.18.2",
+    "prop-types": "^15.5.8",
+    "bootstrap": "3.3.6",
+    "jquery": "2.2.3",
+    "react": "15.0.2",
+    "react-dom": "15.0.2",
+    "react-redux": "4.4.5",
+    "react-router": "2.4.0",
+    "react-router-redux": "4.0.4",
+    "redux": "3.5.2",
+    "redux-thunk": "2.0.1",
+    "toastr": "2.1.2"
+  },
+  "devDependencies": {
+    "babel-cli": "6.8.0",
+    "babel-core": "6.8.0",
+    "babel-loader": "6.2.4",
+    "babel-plugin-react-display-name": "2.0.0",
+    "babel-preset-es2015": "6.6.0",
+    "babel-preset-react": "6.5.0",
+    "babel-preset-react-hmre": "1.1.1",
+    "babel-register": "6.8.0",
+    "cheerio": "0.22.0",
+    "colors": "1.1.2",
+    "compression": "1.6.1",
+    "cross-env": "1.0.7",
+    "css-loader": "0.23.1",
+    "enzyme": "2.2.0",
+    "eslint": "2.9.0",
+    "eslint-plugin-import": "1.6.1",
+    "eslint-plugin-react": "5.0.1",
+    "eslint-watch": "2.1.11",
+    "eventsource-polyfill": "0.9.6",
+    "expect": "1.19.0",
+    "express": "4.13.4",
+    "extract-text-webpack-plugin": "1.0.1",
+    "file-loader": "0.8.5",
+    "jsdom": "8.5.0",
+    "mocha": "2.4.5",
+    "nock": "8.0.0",
+    "npm-run-all": "1.8.0",
+    "open": "0.0.5",
+    "react-addons-test-utils": "15.0.2",
+    "redux-immutable-state-invariant": "1.2.3",
+    "redux-mock-store": "1.0.2",
+    "rimraf": "2.5.2",
+    "style-loader": "0.13.1",
+    "url-loader": "0.5.7",
+    "webpack": "1.13.0",
+    "webpack-dev-middleware": "1.6.1",
+    "webpack-hot-middleware": "2.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coryhouse/pluralsight-redux-starter"
+  }
+}
+
+```
+
+---
 
