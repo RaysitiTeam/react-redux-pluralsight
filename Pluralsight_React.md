@@ -48,7 +48,8 @@ Create an Online / App. for Markdown Reader + Reveal JS from Github.
  - [3 ways of dispatching actions](#3-ways-of-dispatching-actions)
  - [3 Redux Async Libraries](#3-redux-async-libraries)
  - [Class Component Template using Redux](#class-component-template-using-redux)
-
+## Production Ready Webpack
+ - [Setting up a Production Ready Build](#setting-up-a-production-ready-build)
 
 
  # Installing Web Pack
@@ -1695,3 +1696,309 @@ function mapDispatchToProps(dispatch){
 
 export default connect(mapStateToProps,mapDispatchToProps)(ManageCoursePage);
 ```
+
+# Setting up a Production Ready Build
+
+In this setup, we will tackle the following challenges in creating a Production build
+-   Lints and Runs our tests
+-   Bundle & Minify JS & CSS
+-   Generate JS and CSS sourcemaps
+-   Exclude dev-specific concerns
+-   Build React in Production Mode (Switch of propType validation and many other warnings)
+
+
+## Making Changes to the configStore file
+
+Our Redux Store, currently contains `reduxImmutableStateInvariant` code not required for production. So we are removing the third argument `reduxImmutableStateInvariant` from the createStore function:
+
+```js
+//#4: Create a Store function by wiring the rootReducer with - createStore and applyMiddleware functions of redux
+import {createStore, applyMiddleware} from 'redux';
+import rootReducer from '../reducers'; // This will look for reducers/index.js
+//OPTIONAL - Need to add a validation check to see if the state is mutating or not.
+//import reduxImmutableStateInvariant from 'redux-immutable-state-invariant';
+
+
+//Sort of IIFE - This function will run as default when this script is called - export default function
+export default function configureStore(initialState){
+    return createStore(rootReducer,initialState); //reduxImmutableStateInvariant is not required for production, only required for development,
+}//end:configureStore
+
+```
+
+Will name this file as `configStore.prod.js` and save it in the same folder - `store/configStore.prod.js`
+
+The root JS file will have the following:
+
+```js
+if(process.env.NODE_ENV === 'production'){
+    module.exports = require('./configureStore.prod');
+}else{
+    module.exports = require('./configureStore.dev');
+}
+```
+
+---
+
+## Creating a Webpack Production Config file
+
+The Webpack production configuration file will have the following:
+
+```js
+//Configuring Webpack for Production Environment
+//NOTE: We will be calling it from our build.js
+import webpack from 'webpack';
+import path from 'path'; //from npm
+import ExtractTextPlugin from 'extract-text-webpack-plugin'; //Extract CSS from our JS
+
+//Constant for production build - GLOBALS
+const GLOBALS = {
+  'process.env.NODE_ENV':JSON.stringify('production') // Defining a Node env variable, sets React for Production
+}
+
+//We will create an object literal
+export default { 
+  debug: true, // enables displaying of errors
+  devtool: 'source-map', //cheap-module-eval-source-map / inline-source-map - one of many option for devtool
+  noInfo: false, //webpack will display a list of all the files that it is bundling,
+  entry: './src/index', //You dont need Hot-reloading, just point to the index.js
+  target: 'web', //This is a webpack for web application
+  output: {
+    path: __dirname + '/dist', // Note: Physical files are only output by the production build task `npm run build`.
+    publicPath: '/',
+    filename: 'bundle.js' //This is strange, webpack will not generate physical files, but create bundles in memory
+  },
+  devServer: {
+    contentBase: './dist' // For production, we will load from the dist folder
+  },
+  plugins: [
+    //Setting a set of Optimizers for production zip
+    new webpack.optimize.OccurrenceOrderPlugin(), //optimizes the order our plugins are bundled in
+    new webpack.DefinePlugin(GLOBALS), //Omits development features
+    new ExtractTextPlugin('styles.css'), //Lets us extract CSS into a separate file
+    new webpack.optimize.DedupePlugin(), //Dedupe plugin eliminates duplicate library references
+    new webpack.optimize.UglifyJsPlugin() //Minifies JS
+  ],
+  module: {
+    loaders: [
+      {test: /\.js$/, include: path.join(__dirname, 'src'), loaders: ['babel']},
+      {test: /(\.css)$/, loader: ExtractTextPlugin.extract('css?sourceMap')}, //tells it to generte source-maps
+      //Jargon for bootstrap to handle fonts 
+      {test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'},
+      {test: /\.(woff|woff2)$/, loader: 'url?prefix=font/&limit=5000'},
+      {test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/octet-stream'},
+      {test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml'}
+    ]
+  }
+};
+
+```
+
+---
+
+We will also be creating three different files:
+- `build.js` - This script is used to target the `webpack.config.prod.js` insted of the `webpack.config.dev.js` which is default configured in `package.json`
+- `buildHtml.js` - This script is used to inject CSS scripts and bundle.js JS files into html
+- `distServer.js` - This is the Production server triggered from `package.json` file
+
+> tools\build.js
+
+```js
+// More info on Webpack's Node API here: https://webpack.github.io/docs/node.js-api.html
+// Allowing console calls below since this is a build file.
+/*eslint-disable no-console */
+import webpack from 'webpack';
+import webpackConfig from '../webpack.config.prod';
+import colors from 'colors';
+
+process.env.NODE_ENV = 'production'; // this assures the Babel dev config (for hot reloading) doesn't apply.
+
+console.log('Generating minified bundle for production via Webpack. This will take a moment...'.blue);
+
+webpack(webpackConfig).run((err, stats) => {
+  if (err) { // so a fatal error occurred. Stop here.
+    console.log(err.bold.red);
+    return 1;
+  }
+
+  const jsonStats = stats.toJson();
+
+  if (jsonStats.hasErrors) {
+    return jsonStats.errors.map(error => console.log(error.red));
+  }
+
+  if (jsonStats.hasWarnings) {
+    console.log('Webpack generated the following warnings: '.bold.yellow);
+    jsonStats.warnings.map(warning => console.log(warning.yellow));
+  }
+
+  console.log(`Webpack stats: ${stats}`);
+
+  // if we got this far, the build succeeded.
+  console.log('Your app has been compiled in production mode and written to /dist. It\'s ready to roll!'.green);
+
+  return 0;
+});
+
+```
+
+---
+
+> tools\buildHtml.js
+
+```js
+// This script copies src/index.html into /dist/index.html
+// This is a good example of using Node and cheerio to do a simple file transformation.
+// In this case, the transformation is useful since we only use a separate css file in prod.
+import fs from 'fs';
+import cheerio from 'cheerio';
+import colors from 'colors';
+
+/*eslint-disable no-console */
+
+fs.readFile('src/index.html', 'utf8', (err, markup) => {
+  if (err) {
+    return console.log(err);
+  }
+
+  const $ = cheerio.load(markup);
+
+  // since a separate spreadsheet is only utilized for the production build, need to dynamically add this here.
+  $('head').prepend('<link rel="stylesheet" href="styles.css">');
+
+  fs.writeFile('dist/index.html', $.html(), 'utf8', function (err) {
+    if (err) {
+      return console.log(err);
+    }
+    console.log('index.html written to /dist'.green);
+  });
+});
+
+```
+
+---
+
+> tools\distServer.js
+
+```js
+import express from 'express';
+import path from 'path';
+import open from 'open';
+import compression from 'compression';
+
+/*eslint-disable no-console */
+
+const port = 3000;
+const app = express();
+
+app.use(compression());
+app.use(express.static('dist'));
+
+app.get('*', function(req, res) {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+app.listen(port, function(err) {
+  if (err) {
+    console.log(err);
+  } else {
+    open(`http://localhost:${port}`);
+  }
+});
+
+```
+---
+
+## Package.json
+
+Finally, adding the build scripts to the npm `scripts` section  to `package.json`
+
+```js
+{
+  "name": "pluralsight-redux-starter",
+  "version": "1.0.0",
+  "description": "Starter kit for React and Redux Pluralsight course by Cory House",
+  "scripts": {
+    "prestart": "babel-node tools/startMessage.js",
+    "start": "npm-run-all --parallel open:src lint:watch",
+    "open:src": "babel-node tools/srcServer.js",
+    "lint": "node_modules/.bin/esw webpack.config.* src tools",
+    "lint:watch": "npm run lint -- --watch",
+    "test": "mocha --reporter progress tools/testSetup.js \"src/**/*.test.js\"",
+    "test:watch": "npm run test -- --watch",
+    
+    "clean-dist": "npm run remove-dist && mkdir dist",
+    "remove-dist": "node_modules/.bin/rimraf ./dist",
+    "build:html": "babel-node tools/buildHtml.js",
+    "prebuild": "npm-run-all clean-dist test lint build:html",
+    "build": "babel-node tools/build.js",
+    "postbuild": "babel-node tools/distServer.js"
+  },
+  "author": "Cory House",
+  "license": "MIT",
+  "dependencies": {
+    "babel-polyfill": "6.8.0",
+    "axios": "^0.16.1",
+    "classnames": "^2.2.5",
+    "radium": "^0.18.2",
+    "prop-types": "^15.5.8",
+    "bootstrap": "3.3.6",
+    "jquery": "2.2.3",
+    "react": "15.0.2",
+    "react-dom": "15.0.2",
+    "react-redux": "4.4.5",
+    "react-router": "2.4.0",
+    "react-router-redux": "4.0.4",
+    "redux": "3.5.2",
+    "redux-thunk": "2.0.1",
+    "toastr": "2.1.2"
+  },
+  "devDependencies": {
+    "babel-cli": "6.8.0",
+    "babel-core": "6.8.0",
+    "babel-loader": "6.2.4",
+    "babel-plugin-react-display-name": "2.0.0",
+    "babel-preset-es2015": "6.6.0",
+    "babel-preset-react": "6.5.0",
+    "babel-preset-react-hmre": "1.1.1",
+    "babel-register": "6.8.0",
+    "cheerio": "0.22.0",
+    "colors": "1.1.2",
+    "compression": "1.6.1",
+    "cross-env": "1.0.7",
+    "css-loader": "0.23.1",
+    "enzyme": "2.2.0",
+    "eslint": "2.9.0",
+    "eslint-plugin-import": "1.6.1",
+    "eslint-plugin-react": "5.0.1",
+    "eslint-watch": "2.1.11",
+    "eventsource-polyfill": "0.9.6",
+    "expect": "1.19.0",
+    "express": "4.13.4",
+    "extract-text-webpack-plugin": "1.0.1",
+    "file-loader": "0.8.5",
+    "jsdom": "8.5.0",
+    "mocha": "2.4.5",
+    "nock": "8.0.0",
+    "npm-run-all": "1.8.0",
+    "open": "0.0.5",
+    "react-addons-test-utils": "15.0.2",
+    "redux-immutable-state-invariant": "1.2.3",
+    "redux-mock-store": "1.0.2",
+    "rimraf": "2.5.2",
+    "style-loader": "0.13.1",
+    "url-loader": "0.5.7",
+    "webpack": "1.13.0",
+    "webpack-dev-middleware": "1.6.1",
+    "webpack-hot-middleware": "2.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coryhouse/pluralsight-redux-starter"
+  }
+}
+
+```
+
+---
+

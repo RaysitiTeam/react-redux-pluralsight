@@ -1,4 +1,5 @@
 //#5: Wrap the configure store as store object and assign it to the Provider component from react-redux
+/*eslint-disable import/default*/
 import 'babel-polyfill'; //There are few ES6 which babel cannot transpile, so there's babel polyfill
 import React from 'react';
 import {render} from 'react-dom';
