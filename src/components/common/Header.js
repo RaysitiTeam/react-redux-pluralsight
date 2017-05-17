@@ -9,6 +9,6 @@ const Header = ()=>{
             <Link to="/course" activeClassName="active">Courses</Link>
         </nav>
     );
-}//end:Header
+};//end:Header
 
 export default Header;

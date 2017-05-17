@@ -2,7 +2,7 @@ import React,{Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 //If you add - export default in courseActions.js, then you will not be able to use the alias - courseActions
-import courseActions from '../../actions/courseActions'; //Import all exported functions
+import * as courseActions from '../../actions/courseActions'; //Import all exported functions
 
 class CoursePage extends Component{    
 
@@ -23,7 +23,7 @@ class CoursePage extends Component{
 
     onClickSave(){
         // alert(`Saving: ${this.state.course.title}`);
-        this.props.dispatch(courseActions(this.state.course)); //This is because we havent invoked - mapDispatchToProps
+        this.props.dispatch(courseActions.createCourse(this.state.course)); //This is because we havent invoked - mapDispatchToProps
         const course = {title:""};
         this.setState({course:course}); //Clear the input field
     }//end:onClickSave
