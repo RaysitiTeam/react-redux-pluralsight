@@ -1,6 +1,7 @@
 # Lynda React
 
  ## Useful Links
+- [React Stack using Material UI and Flux and React-Router](https://github.com/hendrikswan/react-stack)
 - [Schema Store for Web Development](http://schemastore.org/json/)
 - [React Icons Website](https://gorangajic.github.io/react-icons/fa.html)
 - [React Proptypes In Typeschecking](https://facebook.github.io/react/docs/typechecking-with-proptypes.html)
